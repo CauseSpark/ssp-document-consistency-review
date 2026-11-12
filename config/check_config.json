@@ -1,0 +1,13 @@
+{
+  "_comment": "Edit these lists to fit the document set you are reviewing. All tool names here are fictional.",
+  "retired_tools": [
+    "LogHarbor",
+    "VaultKeep 6",
+    "TicketTrail"
+  ],
+  "review_topics": {
+    "privileged account review": ["privileged account", "privileged accounts", "admin account", "administrator account"],
+    "audit log review": ["audit log", "audit logs", "log review", "logs are reviewed"],
+    "incident response plan test": ["incident response plan", "ir plan", "tabletop"]
+  }
+}
