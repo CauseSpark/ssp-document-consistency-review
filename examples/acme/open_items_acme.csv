@@ -1,0 +1,8 @@
+Item ID,Related Finding,Document,Control,Question For Client,Why It Matters,Owner,Date Raised,Status,Response,Date Closed
+OI-001,ACME-F-001,ACME-POL-AC-01,3.1.5,"Are privileged accounts actually reviewed quarterly, and by whom? Can you share the last two TallyDesk review tickets?",Decides whether the policy or the SSP changes.,ISSO,2026-11-11,Open,,
+OI-002,ACME-F-002,ACME-PRO-AU-01,3.3.5,Is the audit log review weekly or monthly in practice? Is there a review-complete entry for each week of the last quarter?,"If reviews are monthly, the SSP overstates the implementation.",ISSO,2026-11-11,Open,,
+OI-003,ACME-F-003,ACME-PRO-AU-01,3.3.5,"Has LogHarbor been decommissioned? Does it still hold Enclave log data, and is it inside the CUI boundary?",An undocumented log store could expand assessment scope.,IT Administrator,2026-11-11,Open,,
+OI-004,ACME-F-004,ACME-POL-AU-01,3.3.1,What retention is configured in SentryLake SIEM today: 90 days or 12 months?,Confirms which document is correct before editing.,IT Administrator,2026-11-11,Open,,
+OI-005,ACME-F-005,ACME-PRO-IR-01,3.6.2,"Who decides whether an incident is reportable, and who submits the DoD report?",The reporting step needs a named role.,ISSO,2026-11-11,Open,,
+OI-006,ACME-F-006,ACME-SSP-001,3.4.1,"Does ACME-PRO-CM-01 exist? If so, please send the current version.",The SSP relies on it for 3.4.1.,ISSO,2026-11-11,Open,,
+OI-007,ACME-F-008,ACME-PRO-AU-01,Document control,Who approves procedures: the ISSO or the President?,Needed to finish the document-control header.,ISSO,2026-11-11,Open,,
