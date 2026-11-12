@@ -6,8 +6,21 @@
     "TicketTrail"
   ],
   "review_topics": {
-    "privileged account review": ["privileged account", "privileged accounts", "admin account", "administrator account"],
-    "audit log review": ["audit log", "audit logs", "log review", "logs are reviewed"],
-    "incident response plan test": ["incident response plan", "ir plan", "tabletop"]
+    "privileged account review": {
+      "control": "3.1.5",
+      "keywords": ["privileged account", "privileged accounts", "administrator account", "administrator accounts"]
+    },
+    "audit log review": {
+      "control": "3.3.5",
+      "keywords": ["audit log", "audit logs", "audit records"]
+    },
+    "incident response test": {
+      "control": "3.6.3",
+      "keywords": ["incident response capability", "tabletop exercise", "tabletop exercises"]
+    },
+    "baseline configuration review": {
+      "control": "3.4.1",
+      "keywords": ["baseline configuration", "baseline configurations"]
+    }
   }
 }
