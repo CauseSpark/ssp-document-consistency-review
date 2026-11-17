@@ -36,15 +36,8 @@ SCAN_SUFFIXES = {".md", ".txt"}
 SKIP_NAMES = {"readme.md"}
 
 FINDINGS_LOG_COLUMNS = [
-    "ID",
-    "Document",
-    "Control",
-    "Fix Type",
-    "Priority",
-    "What It Says Now",
-    "What The SSP Says",
-    "Proposed Fix",
-    "Question For Client",
+    "ID", "Document", "Control", "Fix Type", "Priority",
+    "What It Says Now", "What The SSP Says", "Proposed Fix", "Question For Client",
 ]
 
 # Document references such as "ACME-POL-AC-01 v2.0"
@@ -126,17 +119,9 @@ class Finding:
     client_question: str = ""
 
     def as_row(self, finding_id: str) -> dict[str, str]:
-        return {
-            "ID": finding_id,
-            "Document": f"{self.document} ({self.location})",
-            "Control": self.control,
-            "Fix Type": self.fix_type,
-            "Priority": self.priority,
-            "What It Says Now": self.current_text,
-            "What The SSP Says": self.ssp_text,
-            "Proposed Fix": self.proposed_fix,
-            "Question For Client": self.client_question,
-        }
+        values = [finding_id, f"{self.document} ({self.location})", self.control, self.fix_type, self.priority,
+                  self.current_text, self.ssp_text, self.proposed_fix, self.client_question]
+        return dict(zip(FINDINGS_LOG_COLUMNS, values))
 
 
 # --------------------------------------------------------------------------- #
@@ -263,6 +248,13 @@ def _clip(text: str, limit: int = 220) -> str:
     return text if len(text) <= limit else text[: limit - 3] + "..."
 
 
+def _finding(doc: Document, line_no: int | None, check: str, fix_type: str, priority: str, current: str,
+             fix: str, *, control: str = "Document control", ssp: str = "", ask: str = "") -> Finding:
+    """Build a Finding located at ``doc`` (and ``line_no``, when the check has one)."""
+    location = f"{doc.rel}:{line_no}" if line_no else doc.rel
+    return Finding(check, doc.label, location, control, fix_type, priority, current, ssp, fix, ask)
+
+
 # --------------------------------------------------------------------------- #
 # Checks
 # --------------------------------------------------------------------------- #
@@ -275,31 +267,19 @@ def check_document_control(docs: list[Document], config: dict) -> list[Finding]:
             value = doc.header.get(field_name.lower())
             if not value:
                 state = "is blank" if field_name.lower() in doc.header else "is missing"
-                findings.append(Finding(
-                    check="document_control",
-                    document=doc.label,
-                    location=doc.rel,
-                    control="Document control",
-                    fix_type="DOC_CONTROL",
-                    priority="Medium",
-                    current_text=f'Header field "{field_name}" {state}.',
-                    ssp_text="",
-                    proposed_fix=f'Fill in "{field_name}" in the document-control header.',
-                    client_question=f'Who should be recorded as "{field_name}" for {doc.label}?'
+                findings.append(_finding(
+                    doc, None, "document_control", "DOC_CONTROL", "Medium",
+                    f'Header field "{field_name}" {state}.',
+                    f'Fill in "{field_name}" in the document-control header.',
+                    ask=f'Who should be recorded as "{field_name}" for {doc.label}?'
                     if field_name.lower() in {"approved by", "owner"} else "",
                 ))
         if doc.doc_id:
             if doc.doc_id in seen_ids:
-                findings.append(Finding(
-                    check="document_control",
-                    document=doc.label,
-                    location=doc.rel,
-                    control="Document control",
-                    fix_type="DOC_CONTROL",
-                    priority="Medium",
-                    current_text=f"Document ID {doc.doc_id} is also used by {seen_ids[doc.doc_id].rel}.",
-                    ssp_text="",
-                    proposed_fix="Give each document a unique ID.",
+                findings.append(_finding(
+                    doc, None, "document_control", "DOC_CONTROL", "Medium",
+                    f"Document ID {doc.doc_id} is also used by {seen_ids[doc.doc_id].rel}.",
+                    "Give each document a unique ID.",
                 ))
             else:
                 seen_ids[doc.doc_id] = doc
@@ -318,32 +298,21 @@ def check_versions(docs: list[Document]) -> list[Finding]:
                     continue
                 target = register.get(ref_id)
                 if target is None:
-                    findings.append(Finding(
-                        check="missing_reference",
-                        document=doc.label,
-                        location=f"{doc.rel}:{line_no}",
-                        control="Document control",
-                        fix_type="MISSING",
-                        priority="High",
-                        current_text=_clip(f"Cites {ref_id} v{ref_ver}: \"{line.strip()}\""),
-                        ssp_text="",
-                        proposed_fix=f"Add {ref_id} to the document package, or remove the reference.",
-                        client_question=f"Does {ref_id} exist? If so, please provide the current version.",
+                    findings.append(_finding(
+                        doc, line_no, "missing_reference", "MISSING", "High",
+                        _clip(f"Cites {ref_id} v{ref_ver}: \"{line.strip()}\""),
+                        f"Add {ref_id} to the document package, or remove the reference.",
+                        ask=f"Does {ref_id} exist? If so, please provide the current version.",
                     ))
                     continue
                 if target.version and normalize_version(ref_ver) != normalize_version(target.version):
-                    findings.append(Finding(
-                        check="version_mismatch",
-                        document=doc.label,
-                        location=f"{doc.rel}:{line_no}",
-                        control="Document control",
-                        fix_type="DOC_CONTROL",
-                        priority="Medium",
-                        current_text=_clip(f"Cites {ref_id} v{ref_ver}."),
-                        ssp_text=f"{ref_id} header says v{target.version}." if target.is_ssp
+                    findings.append(_finding(
+                        doc, line_no, "version_mismatch", "DOC_CONTROL", "Medium",
+                        _clip(f"Cites {ref_id} v{ref_ver}."),
+                        f"Update the reference to {ref_id} v{target.version} and confirm "
+                        f"the cited content didn't change between versions.",
+                        ssp=f"{ref_id} header says v{target.version}." if target.is_ssp
                         else f"{ref_id} header says v{target.version} ({target.rel}).",
-                        proposed_fix=f"Update the reference to {ref_id} v{target.version} and confirm "
-                                     f"the cited content didn't change between versions.",
                     ))
     return findings
 
@@ -382,18 +351,12 @@ def check_review_cycles(docs: list[Document], config: dict) -> list[Finding]:
                        f"or update the SSP if {'/'.join(freqs)} is the actual practice.")
             else:
                 fix = f"Pick one {topic} frequency and use it in every document."
-            findings.append(Finding(
-                check="review_cycle_mismatch",
-                document=doc.label,
-                location=f"{doc.rel}:{line_no}",
-                control=control,
-                fix_type="WORDING",
-                priority="High",
-                current_text=_clip(f"{topic}: {'/'.join(freqs)}. \"{sentence}\""),
-                ssp_text=ssp_text or "(SSP gives no frequency for this topic)",
-                proposed_fix=fix,
-                client_question=f"How often is the {topic} actually performed, and is there evidence "
-                                f"(tickets, sign-offs) for the last cycle?",
+            findings.append(_finding(
+                doc, line_no, "review_cycle_mismatch", "WORDING", "High",
+                _clip(f"{topic}: {'/'.join(freqs)}. \"{sentence}\""), fix,
+                control=control, ssp=ssp_text or "(SSP gives no frequency for this topic)",
+                ask=f"How often is the {topic} actually performed, and is there evidence "
+                    f"(tickets, sign-offs) for the last cycle?",
             ))
     return findings
 
@@ -408,17 +371,12 @@ def check_retired_tools(docs: list[Document], config: dict) -> list[Finding]:
         for line_no, line in enumerate(doc.lines, start=1):
             for tool, pat in patterns:
                 if pat.search(line):
-                    findings.append(Finding(
-                        check="retired_tool",
-                        document=doc.label,
-                        location=f"{doc.rel}:{line_no}",
-                        control="",
-                        fix_type="STALE_TOOL",
-                        priority="High",
-                        current_text=_clip(f"Names retired tool \"{tool}\": \"{line.strip()}\""),
-                        ssp_text=f"\"{tool}\" is not part of the system the SSP describes (on retired-tools list).",
-                        proposed_fix=f"Replace \"{tool}\" with the current tool named in the SSP and update the steps.",
-                        client_question=f"Has {tool} been fully decommissioned, and does it still hold any data?",
+                    findings.append(_finding(
+                        doc, line_no, "retired_tool", "STALE_TOOL", "High",
+                        _clip(f"Names retired tool \"{tool}\": \"{line.strip()}\""),
+                        f"Replace \"{tool}\" with the current tool named in the SSP and update the steps.",
+                        control="", ssp=f"\"{tool}\" is not part of the system the SSP describes (on retired-tools list).",
+                        ask=f"Has {tool} been fully decommissioned, and does it still hold any data?",
                     ))
     return findings
 
